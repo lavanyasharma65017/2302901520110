@@ -231,3 +231,177 @@ Failed emails are placed into a retry queue and processed again automatically.
 - Scalability
 - Fault tolerance
 - Faster processing
+
+
+# Stage 2
+
+## Recommended Database
+
+I recommend **PostgreSQL** as the primary database for the notification system.
+
+### Reasons
+
+* Strong ACID compliance ensures data consistency.
+* Efficient indexing and query optimization.
+* Handles large-scale notification data effectively.
+* Supports partitioning for future scalability.
+* Reliable support for filtering, sorting, and pagination.
+
+---
+
+## Database Schema
+
+### Students Table
+
+| Column     | Type         | Description          |
+| ---------- | ------------ | -------------------- |
+| student_id | BIGINT       | Primary Key          |
+| name       | VARCHAR(100) | Student Name         |
+| email      | VARCHAR(255) | Student Email        |
+| created_at | TIMESTAMP    | Record Creation Time |
+
+### Notifications Table
+
+| Column            | Type                               | Description           |
+| ----------------- | ---------------------------------- | --------------------- |
+| notification_id   | UUID                               | Primary Key           |
+| student_id        | BIGINT                             | Foreign Key           |
+| notification_type | ENUM('Event','Result','Placement') | Notification Category |
+| title             | VARCHAR(255)                       | Notification Title    |
+| message           | TEXT                               | Notification Content  |
+| is_read           | BOOLEAN                            | Read Status           |
+| created_at        | TIMESTAMP                          | Notification Time     |
+
+---
+
+## Relationships
+
+* One student can receive multiple notifications.
+* Each notification belongs to one student.
+
+---
+
+## Sample SQL Queries
+
+### Create Notification
+
+```sql
+INSERT INTO notifications (
+notification_id,
+student_id,
+notification_type,
+title,
+message,
+is_read,
+created_at
+)
+VALUES (
+gen_random_uuid(),
+1042,
+'Placement',
+'Placement Opportunity',
+'CSX Corporation is hiring',
+false,
+NOW()
+);
+```
+
+### Get All Notifications
+
+```sql
+SELECT *
+FROM notifications
+WHERE student_id = 1042
+ORDER BY created_at DESC;
+```
+
+### Get Unread Notifications
+
+```sql
+SELECT *
+FROM notifications
+WHERE student_id = 1042
+AND is_read = false
+ORDER BY created_at DESC;
+```
+
+### Mark Notification As Read
+
+```sql
+UPDATE notifications
+SET is_read = true
+WHERE notification_id =
+'d146095a-0d86-4a34-9e69-3900a14576bc';
+```
+
+### Delete Notification
+
+```sql
+DELETE FROM notifications
+WHERE notification_id =
+'d146095a-0d86-4a34-9e69-3900a14576bc';
+```
+
+---
+
+## Scalability Challenges
+
+As data volume increases to millions of notifications:
+
+1. Slow query execution.
+2. Large table scans.
+3. Increased storage requirements.
+4. Higher database load.
+5. Longer response times.
+
+---
+
+## Proposed Solutions
+
+### Indexing
+
+Create indexes on frequently queried columns.
+
+```sql
+CREATE INDEX idx_student_read
+ON notifications(student_id, is_read);
+```
+
+### Partitioning
+
+Partition notifications by month or year.
+
+Benefits:
+
+* Faster queries.
+* Easier maintenance.
+* Reduced scan size.
+
+### Pagination
+
+Fetch records in smaller chunks.
+
+Example:
+
+```sql
+SELECT *
+FROM notifications
+WHERE student_id = 1042
+ORDER BY created_at DESC
+LIMIT 20 OFFSET 0;
+```
+
+### Archiving
+
+Move old notifications to archive tables.
+
+Benefits:
+
+* Smaller active dataset.
+* Improved query performance.
+
+---
+
+## Conclusion
+
+PostgreSQL provides strong consistency, scalability, indexing capabilities, and efficient query performance, making it a suitable database choice for a large-scale campus notification platform.
