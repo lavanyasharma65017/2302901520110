@@ -509,3 +509,123 @@ Create indexes only on columns frequently used in:
 ## Conclusion
 
 The recommended composite index significantly improves notification retrieval performance while avoiding unnecessary indexing overhead. A balanced indexing strategy provides faster queries, lower resource consumption, and better scalability for large datasets.
+
+
+# Stage 4
+
+## Handling Database Overload
+
+As the number of students and notifications increases, the database may become overloaded due to frequent read requests.
+
+### Current Problem
+
+Every time a student opens the notification page, a database query is executed.
+
+Flow:
+
+Student → Backend → Database
+
+With thousands of active users, this can significantly increase database load and response time.
+
+---
+
+## Solution 1: Redis Cache
+
+Store frequently accessed notifications in Redis.
+
+Flow:
+
+Student → Backend → Redis Cache
+
+If data is available in Redis, the database is not queried.
+
+### Advantages
+
+* Faster response time
+* Reduced database load
+* Better scalability
+
+### Trade-off
+
+* Additional infrastructure and memory usage
+
+---
+
+## Solution 2: Pagination
+
+Instead of loading all notifications at once, load them in smaller chunks.
+
+Example:
+
+```sql
+SELECT *
+FROM notifications
+ORDER BY created_at DESC
+LIMIT 20 OFFSET 0;
+```
+
+### Advantages
+
+* Reduced query execution time
+* Lower memory usage
+* Better user experience
+
+---
+
+## Solution 3: WebSockets
+
+Avoid frequent polling requests.
+
+Instead of:
+
+Student → Backend every 5 seconds
+
+Use:
+
+Backend → Push notification instantly
+
+### Advantages
+
+* Real-time updates
+* Fewer API calls
+* Reduced server load
+
+---
+
+## Solution 4: Read Replicas
+
+Use database replicas for read operations.
+
+Architecture:
+
+Primary Database
+↓
+Read Replica 1
+↓
+Read Replica 2
+
+### Advantages
+
+* Better read performance
+* Reduced load on primary database
+* Improved scalability
+
+---
+
+## Recommended Approach
+
+A combination of:
+
+* Redis Cache
+* Pagination
+* WebSockets
+* Read Replicas
+
+provides the best performance, scalability, and user experience for a large-scale notification system.
+
+---
+
+## Conclusion
+
+The proposed optimizations reduce database load, improve response times, and ensure that the notification platform remains responsive even when serving thousands of students simultaneously.
+
