@@ -405,3 +405,107 @@ Benefits:
 ## Conclusion
 
 PostgreSQL provides strong consistency, scalability, indexing capabilities, and efficient query performance, making it a suitable database choice for a large-scale campus notification platform.
+
+
+# Stage 3
+
+## Query Performance Analysis
+
+### Given Query
+
+```sql
+SELECT *
+FROM notifications
+WHERE studentID = 1042
+AND isRead = false
+ORDER BY createdAt ASC;
+```
+
+---
+
+## Why Is This Query Slow?
+
+The notifications table contains millions of records.
+
+Without proper indexes, the database must scan every row to find matching records.
+
+Problems:
+
+* Full table scan
+* High CPU usage
+* Increased query execution time
+* Poor scalability
+
+---
+
+## Recommended Index
+
+```sql
+CREATE INDEX idx_notifications_student_read_created
+ON notifications(student_id, is_read, created_at);
+```
+
+### Benefits
+
+* Faster filtering by student_id
+* Faster filtering by read status
+* Faster sorting using created_at
+* Reduced query execution time
+
+---
+
+## Placement Notifications Query
+
+To identify students who received placement notifications in the last 7 days:
+
+```sql
+SELECT DISTINCT student_id
+FROM notifications
+WHERE notification_type = 'Placement'
+AND created_at >= NOW() - INTERVAL '7 days';
+```
+
+### Why DISTINCT?
+
+A student may receive multiple placement notifications.
+
+DISTINCT ensures each student appears only once.
+
+---
+
+## Why Not Create Indexes On Every Column?
+
+Although indexes improve read performance, excessive indexing causes:
+
+### Increased Storage Usage
+
+Every index consumes additional disk space.
+
+### Slower Inserts
+
+Whenever a new notification is inserted, all indexes must be updated.
+
+### Slower Updates
+
+Updating indexed columns requires index maintenance.
+
+### Higher Memory Consumption
+
+Large numbers of indexes increase memory requirements.
+
+---
+
+## Best Practice
+
+Create indexes only on columns frequently used in:
+
+* WHERE clauses
+* JOIN operations
+* ORDER BY clauses
+* Search filters
+
+---
+
+## Conclusion
+
+The recommended composite index significantly improves notification retrieval performance while avoiding unnecessary indexing overhead. A balanced indexing strategy provides faster queries, lower resource consumption, and better scalability for large datasets.
