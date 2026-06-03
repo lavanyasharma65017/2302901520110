@@ -629,3 +629,149 @@ provides the best performance, scalability, and user experience for a large-scal
 
 The proposed optimizations reduce database load, improve response times, and ensure that the notification platform remains responsive even when serving thousands of students simultaneously.
 
+
+# Stage 5
+
+## Redesigning the "Notify All Students" Feature
+
+### Existing Approach
+
+Currently, notifications are sent one student at a time.
+
+Example:
+
+```python
+for student in students:
+    save_notification(student)
+    send_email(student)
+    send_push_notification(student)
+```
+
+### Problems
+
+* Slow execution for thousands of students
+* High server load
+* Failure of one operation may interrupt the process
+* Difficult to scale
+* Poor fault tolerance
+
+---
+
+## Proposed Architecture
+
+Use an asynchronous message queue system.
+
+Architecture:
+
+HR/Admin
+
+↓
+
+Notification Service
+
+↓
+
+Message Queue (Kafka / RabbitMQ)
+
+↓
+
+Worker Services
+
+↓
+
+Database + Email Service + Push Notification Service
+
+---
+
+## Workflow
+
+### Step 1
+
+HR creates a notification.
+
+### Step 2
+
+Notification Service validates the request.
+
+### Step 3
+
+A notification job is pushed to the queue.
+
+### Step 4
+
+Workers consume jobs from the queue.
+
+### Step 5
+
+Workers:
+
+* Save notification to database
+* Send email notifications
+* Send push notifications
+
+---
+
+## Retry Mechanism
+
+If email delivery fails:
+
+Worker
+
+↓
+
+Retry Queue
+
+↓
+
+Retry Processing
+
+This prevents notification loss.
+
+---
+
+## Benefits
+
+### Scalability
+
+Multiple workers can process jobs simultaneously.
+
+### Reliability
+
+Failures do not stop the entire process.
+
+### Faster Response Time
+
+The API responds immediately after placing a job in the queue.
+
+### Fault Tolerance
+
+Failed tasks can be retried automatically.
+
+---
+
+## Recommended Technologies
+
+### Message Queue
+
+* Apache Kafka
+* RabbitMQ
+
+### Database
+
+* PostgreSQL
+
+### Cache
+
+* Redis
+
+### Notification Delivery
+
+* Email Service
+* Push Notification Service
+
+---
+
+## Conclusion
+
+A queue-based architecture significantly improves performance, scalability, reliability, and fault tolerance. It is suitable for sending notifications to thousands of students efficiently without overloading the application server.
+
